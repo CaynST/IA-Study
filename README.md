@@ -113,12 +113,17 @@ validación del contenido.
    repositorio en el código.**
 5. La URL queda como `https://<usuario>.github.io/<repo>/`.
 
-Para probar la subruta en local:
+Para probar la subruta en local (este repositorio se publica en `/IA-Study/`):
 
 ```bash
-VITE_BASE_PATH=/mi-repo/ npm run build
+VITE_BASE_PATH=/IA-Study/ npm run build
 npm run preview
 ```
+
+Con el repositorio llamado `IA-Study`, la URL final queda
+`https://<usuario>.github.io/IA-Study/`. El workflow toma el nombre del repositorio
+automáticamente (`github.event.repository.name`), así que si lo renombras no hay que
+editar archivos.
 
 ## Datos y atribución
 
