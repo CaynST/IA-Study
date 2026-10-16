@@ -33,6 +33,22 @@ const multipleQuestion: Question = {
   origin: 'fuente',
 }
 
+const multiQuestion: Question = {
+  id: 'test-multi',
+  moduleId: '1.5',
+  lessonId: 'm5-2-elementos',
+  section: '1.5.2',
+  type: 'multiple',
+  multi: true,
+  difficulty: 'media',
+  prompt: '¿Cuáles de estas son restricciones duras?',
+  options: ['Sin traslapes de horario', 'Evitar clases a las 7:00', 'Capacidad suficiente del aula'],
+  correct: [0, 2],
+  explanation: 'Las restricciones duras no pueden violarse; evitar clases temprano es una preferencia (blanda).',
+  sourcePages: ['Tema 1.5 · p. 14'],
+  origin: 'fuente',
+}
+
 function renderQuiz(questions: Question[]) {
   return render(
     <ProgressProvider>
@@ -56,6 +72,18 @@ describe('QuizSet', () => {
     expect(screen.getByText('Incorrecto')).toBeInTheDocument()
     expect(screen.getByText(/Respuesta correcta:/)).toBeInTheDocument()
     expect(screen.getByText(/no consciencia/)).toBeInTheDocument()
+  })
+
+  it('marca la opción que falló sin listar todas las correctas (opción múltiple)', () => {
+    renderQuiz([multiQuestion])
+    fireEvent.click(screen.getByLabelText('Sin traslapes de horario'))
+    fireEvent.click(screen.getByLabelText('Evitar clases a las 7:00'))
+    fireEvent.click(screen.getByRole('button', { name: 'Comprobar' }))
+    expect(screen.getByText(/Falló:/)).toBeInTheDocument()
+    expect(screen.getByText('incorrecta')).toBeInTheDocument()
+    expect(screen.getByText(/Faltó marcar:/)).toBeInTheDocument()
+    // No debe volcar la lista de todas las respuestas correctas.
+    expect(screen.queryByText(/Respuesta correcta:/)).not.toBeInTheDocument()
   })
 
   it('permite reintentar y limpia la corrección', () => {
