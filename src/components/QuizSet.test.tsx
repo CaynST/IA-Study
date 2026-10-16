@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+import { useState } from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import type { Question } from '@/types/content'
 import { QuizSet } from '@/components/QuizSet'
@@ -49,6 +50,22 @@ const multiQuestion: Question = {
   origin: 'fuente',
 }
 
+/**
+ * Contenedor que re-renderiza con un arreglo nuevo (misma identidad de ids),
+ * como ocurre en las páginas reales al actualizarse el progreso.
+ */
+function ReRenderHarness({ question }: { question: Question }) {
+  const [, setTick] = useState(0)
+  return (
+    <ProgressProvider>
+      <button type="button" onClick={() => setTick((t) => t + 1)}>
+        forzar re-render
+      </button>
+      <QuizSet questions={[question]} shuffleOptions heading="Prueba" />
+    </ProgressProvider>
+  )
+}
+
 function renderQuiz(questions: Question[]) {
   return render(
     <ProgressProvider>
@@ -84,6 +101,25 @@ describe('QuizSet', () => {
     expect(screen.getByText(/Faltó marcar:/)).toBeInTheDocument()
     // No debe volcar la lista de todas las respuestas correctas.
     expect(screen.queryByText(/Respuesta correcta:/)).not.toBeInTheDocument()
+  })
+
+  it('mantiene la calificación al re-renderizar con un arreglo nuevo (opción múltiple)', () => {
+    // Simula que la segunda mezcla difiere de la primera («a veces»).
+    const seq = [0, 0, 0.99, 0.99]
+    let call = 0
+    const rng = vi.spyOn(Math, 'random').mockImplementation(() => seq[call++ % seq.length])
+    try {
+      render(<ReRenderHarness question={multiQuestion} />)
+      fireEvent.click(screen.getByLabelText('Sin traslapes de horario'))
+      fireEvent.click(screen.getByLabelText('Capacidad suficiente del aula'))
+      fireEvent.click(screen.getByRole('button', { name: 'Comprobar' }))
+      fireEvent.click(screen.getByRole('button', { name: 'forzar re-render' }))
+      expect(screen.getByText('Correcto')).toBeInTheDocument()
+      expect(screen.queryByText('incorrecta')).not.toBeInTheDocument()
+      expect(screen.queryByText(/faltó marcarla/)).not.toBeInTheDocument()
+    } finally {
+      rng.mockRestore()
+    }
   })
 
   it('permite reintentar y limpia la corrección', () => {

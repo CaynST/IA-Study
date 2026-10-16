@@ -76,6 +76,16 @@ export function makeRng(seed: number): () => number {
   }
 }
 
+/** Hash de cadena a entero sin signo (FNV-1a de 32 bits), para semillas estables. */
+export function hashString(input: string): number {
+  let h = 2166136261
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
 /** Mezcla una copia del arreglo (Fisher–Yates). */
 export function shuffle<T>(items: readonly T[], rng: () => number = Math.random): T[] {
   const copy = [...items]

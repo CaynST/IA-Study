@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { RotateCcw, Trophy } from 'lucide-react'
 import type { Question } from '@/types/content'
-import { shuffle, shuffleQuestionOptions } from '@/lib/quiz'
+import { hashString, makeRng, shuffle, shuffleQuestionOptions } from '@/lib/quiz'
 import { QuestionCard } from '@/components/Quiz'
 
 interface QuizSetProps {
@@ -21,12 +21,20 @@ export function QuizSet({
   const [seed, setSeed] = useState(1)
   const [results, setResults] = useState<Record<string, boolean>>({})
 
+  /**
+   * La preparación es determinista para un mismo conjunto de ids y semilla.
+   * Así, aunque el componente padre se re-renderice (por ejemplo al guardar
+   * el progreso) y entregue un arreglo nuevo, el orden de opciones y los
+   * índices correctos NO cambian y la corrección sigue siendo coherente.
+   */
+  const ids = questions.map((q) => q.id).join('|')
   const prepared = useMemo(() => {
-    const list = questions.map((q) => shuffleQuestionOptions(q, Math.random))
-    return shuffleOptions ? shuffle(list, Math.random) : list
-    // El seed fuerza recomputación al reintentar.
+    if (!shuffleOptions) return questions
+    const rng = makeRng(hashString(`${ids}#${seed}`))
+    const list = questions.map((q) => shuffleQuestionOptions(q, rng))
+    return shuffle(list, rng)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questions, shuffleOptions, seed])
+  }, [ids, shuffleOptions, seed])
 
   const answered = Object.keys(results).length
   const correct = Object.values(results).filter(Boolean).length
